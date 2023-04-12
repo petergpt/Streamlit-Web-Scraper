@@ -3,7 +3,7 @@ import json
 import requests
 import re
 import streamlit as st
-from helpers import format_url, scrape_website, get_summary
+from helpers import format_url, scrape_website, get_summary, get_sentiment
 
 def get_generated_url(prompt):
     messages = [
@@ -67,8 +67,11 @@ if st.button("Submit"):
         with st.spinner("Scraping website and generating summary..."):
             content = scrape_website(url)
             summary = get_summary(content)
+            sentiment = get_sentiment(summary)  # Analyze the sentiment of the summary
     except Exception as e:
         st.error(f"An error occurred: {e}")
     else:
+        st.subheader("Sentiment")  # Display the sentiment of the summary
+        st.write(sentiment)  
         st.subheader("Summary")
         st.write(summary)
