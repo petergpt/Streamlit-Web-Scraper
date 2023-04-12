@@ -18,7 +18,7 @@ def scrape_website(url):
     return text
 
 def get_sentiment(text):
-    prompt = f"Please classify the sentiment of the following text - you can be as neauanced, but only limit your output to 20 words. Add in an appropriate emoji:\n\n{text}"
+    prompt = f"Please classify the sentiment of the following text - you can be as neauanced, list in 5 bullet points, keep it very short. Add in an appropriate emoji:\n\n{text}"
     messages = [{"role": "system", "content": "You are a helpful assistant that analyzes the sentiment of text."},
                 {"role": "user", "content": prompt}]
     headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {os.environ["OPENAI_API_KEY"]}'}
