@@ -1,35 +1,17 @@
 import os
 import json
 import requests
-import re
 import streamlit as st
-from helpers import format_url, scrape_website, get_summary, get_sentiment
+from helpers import format_url, scrape_website, get_summary, get_sentiment, get_generated_url
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-def get_generated_url(prompt):
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant that generates URLs based on user input."},
-        {"role": "user", "content": prompt}
-    ]
-    headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {os.environ["OPENAI_API_KEY"]}'}
-    data = json.dumps({"model": "gpt-4", "messages": messages, "max_tokens": 50, "n": 1, "stop": None, "temperature": 0.5})
-    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=data)
-
-    try:
-        generated_text = response.json()['choices'][0]['message']['content'].strip()
-    except KeyError:
-        print("Error in OpenAI API response:", response.content)
-        raise Exception("An error occurred while processing the generated URL from the OpenAI API.")
-    
-    # Extract URL from the generated text
-    url_match = re.search(r'https?://[^\s]+', generated_text)
-    if url_match:
-        return url_match.group(0)
-    else:
-        raise Exception("No URL was found in the generated text.")
+def process_url(url):
+    content = scrape_website(url)
+    summary = get_summary(content)
+    sentiment = get_sentiment(summary)
+    return url, summary, sentiment
 
 st.title("URL Summarizer")
-
-source_option = st.radio("Choose a source option:", ("Enter a URL or keyword", "Select from pre-listed UK news websites"))
 
 url_mapping = {
     "BBC": "www.bbc.co.uk/news",
@@ -44,34 +26,64 @@ url_mapping = {
     "Financial Times": "www.ft.com"
 }
 
+source_option = st.radio("Choose a source option:", ("Enter a URL or keyword", "Select from pre-listed UK news websites"))
+
+selected_urls = [None, None, None]
+url_inputs = ["", "", ""]
+
 if source_option == "Enter a URL or keyword":
-    url_input = st.text_input("Enter a URL or keyword:")
-    selected_url = None
+    url_inputs[0] = st.text_input("Enter URL or keyword for Summary 1:")
+    url_inputs[1] = st.text_input("Enter URL or keyword for Summary 2:")
+    url_inputs[2] = st.text_input("Enter URL or keyword for Summary 3:")
 else:
-    selected_website = st.selectbox("Choose from the pre-listed UK news websites:", list(url_mapping.keys()))
-    selected_url = url_mapping[selected_website]
-    url_input = None
+    for i in range(3):
+        selected_website = st.selectbox(f"Choose from the pre-listed UK news websites for Summary {i+1}:", [None] + list(url_mapping.keys()), key=i)
+        if selected_website:
+            selected_urls[i] = url_mapping[selected_website]
 
 if st.button("Submit"):
-    if url_input:
-        with st.spinner("Generating URL based on input..."):
+    urls = []
+    for url_input, selected_url in zip(url_inputs, selected_urls):
+        if url_input:
             url_input = get_generated_url(url_input)
+            urls.append(url_input)
+        else:
+            urls.append(selected_url)
 
-        url = url_input
-    else:
-        url = selected_url
+    results = {}
+    progress_bar = st.progress(0)
+    progress = 0
 
-    st.write(f"Processing URL: {url}")
+    with ThreadPoolExecutor() as executor:
+        future_to_url = {executor.submit(process_url, url): url for url in urls}
+        
+        for future in as_completed(future_to_url):
+            url = future_to_url[future]
+            try:
+                results[url] = future.result()
+            except Exception as e:
+                results[url] = (url, None, str(e))
+            
+            progress += 1
+            progress_bar.progress(progress / len(urls))
 
-    try:
-        with st.spinner("Scraping website and generating summary..."):
-            content = scrape_website(url)
-            summary = get_summary(content)
-            sentiment = get_sentiment(summary)  # Analyze the sentiment of the summary
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
-    else:
-        st.subheader("Sentiment")  # Display the sentiment of the summary
-        st.write(sentiment)  
-        st.subheader("Summary")
-        st.write(summary)
+    cols = st.columns(3)
+    
+    for i, url in enumerate(urls):
+        col = cols[i]
+
+        if not url:
+            col.error("No URL provided for this summary.")
+            continue
+
+        summary, sentiment = results[url][1], results[url][2]
+        
+        col.write(f"Processing URL: {url}")
+
+        try:
+            col.subheader("Sentiment")  # Display the sentiment of the summary
+            col.write(sentiment)  
+            col.subheader("Summary")
+            col.write(summary)
+        except Exception as e:
+            col.error(f"An error occurred: {e}")

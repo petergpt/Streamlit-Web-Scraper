@@ -1,5 +1,6 @@
 import os
 import requests
+import re
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import json
@@ -9,6 +10,28 @@ def format_url(url):
     if parsed_url.scheme and parsed_url.netloc:
         return url
     return "https://" + url
+
+def get_generated_url(prompt):
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant that generates URLs based on user input."},
+        {"role": "user", "content": prompt}
+    ]
+    headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {os.environ["OPENAI_API_KEY"]}'}
+    data = json.dumps({"model": "gpt-4", "messages": messages, "max_tokens": 50, "n": 1, "stop": None, "temperature": 0.5})
+    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=data)
+
+    try:
+        generated_text = response.json()['choices'][0]['message']['content'].strip()
+    except KeyError:
+        print("Error in OpenAI API response:", response.content)
+        raise Exception("An error occurred while processing the generated URL from the OpenAI API.")
+    
+    # Extract URL from the generated text
+    url_match = re.search(r'https?://[^\s]+', generated_text)
+    if url_match:
+        return url_match.group(0)
+    else:
+        raise Exception("No URL was found in the generated text.")
 
 def scrape_website(url):
     url = format_url(url)
