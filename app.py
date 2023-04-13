@@ -1,7 +1,9 @@
 import os
 import json
 import requests
+import re
 import streamlit as st
+import pandas as pd
 from helpers import format_url, scrape_website, get_summary, get_sentiment, get_generated_url
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -67,23 +69,18 @@ if st.button("Submit"):
             progress += 1
             progress_bar.progress(progress / len(urls))
 
-    cols = st.columns(3)
-    
-    for i, url in enumerate(urls):
-        col = cols[i]
+    # Prepare the table data
+    table_data = []
 
+    for i, url in enumerate(urls):
         if not url:
-            col.error("No URL provided for this summary.")
+            table_data.append({"URL": f"Summary {i+1} (No URL provided)", "Sentiment": "N/A", "Summary": "N/A"})
             continue
 
         summary, sentiment = results[url][1], results[url][2]
         
-        col.write(f"Processing URL: {url}")
+        table_data.append({"URL": url, "Sentiment": sentiment, "Summary": summary})
 
-        try:
-            col.subheader("Sentiment")  # Display the sentiment of the summary
-            col.write(sentiment)  
-            col.subheader("Summary")
-            col.write(summary)
-        except Exception as e:
-            col.error(f"An error occurred: {e}")
+    # Create and display the table
+    df = pd.DataFrame(table_data, index=range(1, len(table_data) + 1))
+    st.table(df)
