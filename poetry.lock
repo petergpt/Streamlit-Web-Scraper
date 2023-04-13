@@ -290,6 +290,14 @@ MarkupSafe = ">=2.0"
 i18n = ["Babel (>=2.7)"]
 
 [[package]]
+name = "joblib"
+version = "1.2.0"
+description = "Lightweight pipelining with Python functions"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
 name = "jsonschema"
 version = "4.17.3"
 description = "An implementation of JSON Schema validation for Python"
@@ -349,6 +357,28 @@ description = "multidict implementation"
 category = "main"
 optional = false
 python-versions = ">=3.7"
+
+[[package]]
+name = "nltk"
+version = "3.8.1"
+description = "Natural Language Toolkit"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+click = "*"
+joblib = "*"
+regex = ">=2021.8.3"
+tqdm = "*"
+
+[package.extras]
+all = ["scikit-learn", "python-crfsuite", "requests", "numpy", "pyparsing", "twython", "scipy", "matplotlib"]
+corenlp = ["requests"]
+machine_learning = ["numpy", "python-crfsuite", "scikit-learn", "scipy"]
+plot = ["matplotlib"]
+tgrep = ["pyparsing"]
+twitter = ["twython"]
 
 [[package]]
 name = "numpy"
@@ -611,6 +641,14 @@ description = "YAML parser and emitter for Python"
 category = "main"
 optional = false
 python-versions = ">=3.6"
+
+[[package]]
+name = "regex"
+version = "2023.3.23"
+description = "Alternative regular expression module, to replace re."
+category = "main"
+optional = false
+python-versions = ">=3.8"
 
 [[package]]
 name = "replit"
@@ -959,7 +997,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "flake8 (<5)", "pytest-co
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10.0,<3.11"
-content-hash = "5abf70077f8c7b4a3c24030cd01649b6fe131713780ea6d313bd9572b254adcf"
+content-hash = "b0c92d81a0b62c846485f68d4f7b93e6998b05466844518c7e6b9d4fdf5a3bdb"
 
 [metadata.files]
 aiohttp = []
@@ -987,11 +1025,13 @@ importlib-metadata = []
 itsdangerous = []
 jedi = []
 jinja2 = []
+joblib = []
 jsonschema = []
 markdown-it-py = []
 markupsafe = []
 mdurl = []
 multidict = []
+nltk = []
 numpy = []
 openai = []
 packaging = []
@@ -1015,6 +1055,7 @@ pytoolconfig = []
 pytz = []
 pytz-deprecation-shim = []
 pyyaml = []
+regex = []
 replit = []
 replit-python-lsp-server = []
 requests = []

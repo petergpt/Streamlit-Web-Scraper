@@ -16,6 +16,7 @@ bs4 = "^0.0.1"
 openai = "^0.27.4"
 pyngrok = "^5.2.1"
 utils = "^1.0.1"
+nltk = "^3.8.1"
 
 [tool.poetry.dev-dependencies]
 debugpy = "^1.6.2"
